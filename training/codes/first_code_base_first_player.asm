@@ -17,17 +17,18 @@ int 0x87
 
 ; get the ax from the shared memory
 lodsw
+mov bx, ax
 
 ; set the first location for the call far to be at bx with value of (ax - <value>)
-mov bx, ax
-sub bx, 0x200
-mov byte bl, 0xA3 ; set the low byte of bx to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
+;TODO: check if can change this to one row 
+sub ax, 0x200
+mov byte al, 0xA3 ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
 
 ; write the first location to the shared memory
-mov [0x2], bx
+mov [0x2], ax
 mov word [0x4], 0x1000
 
-mov bp, 2
+;mov bp, 2
 
 ; switch segments
 push es
@@ -38,16 +39,14 @@ pop ds
 
 
 
-; write to the start of the code (ax) - the location of the trap code location (for the zombies)
-mov di, ax
-add ax, trap
-mov [di], ax
+; write to the start of the code (bx) - the location of the trap code location (for the zombies)
+lea dx, [bx + trap]
+mov [bx], dx  
 
 
 mov di, 0xA ; the location in the shared memory for the copy code location
 ; move si to the location of the code to copy
-mov si, ax
-sub si, trap-copy
+lea si, [bx + copy]
 ; copy all the copy code to the shared memory
 mov cx, (end_of_copy - copy) / 2
 rep movsw ; copy all the copy code to the shared memory
@@ -70,8 +69,7 @@ mov bp, [bx]
 mov word [bp + 0x0], 0x1fff
 
 ; move the sp(stack pointer) to the location of the call far opcode + 200 (the amount of memory to attack before run away - can be changed) 
-mov sp, bp
-add sp, 0x200
+lea sp, [bp + 0x200]
 ; move di to the location of the call far opcode + 1
 mov di, bp
 inc di
@@ -86,11 +84,10 @@ call far [bx]
 copy: ; this part of the code will be copy to the shared memory (for re writing)
 rep movsw
 sub word [bx], 0x200 ; the size of the next attack
-sub word sp, 0x100
 mov di, [bx]
 inc di
 ; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
-mov cx, (end_of_copy - copy) / 2 + 1 ; change this to the exact number
+mov cx, (end_of_copy - copy) / 2 + 1
 mov si, 0xA
 ; write in the game the opcode 1fff
 mov bp, [bx]
@@ -101,7 +98,7 @@ call far [bx]
 ; bp - the location of the call far opcode (because it's special register)
 ; bx - the location for the call far in shared memory - currently 0x2
 ; cx - the amount of times to do movsw
-;
+; dx - free TODO: use it
 ;
 
 end_of_copy:
