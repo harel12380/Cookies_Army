@@ -73,26 +73,28 @@ lea sp, [bp + 0x200]
 ; move di to the location of the call far opcode + 1
 mov di, bp
 inc di
-mov cl, (end_of_copy - copy) / 2
+mov cl, (end_of_copy - copy) / 2 - 2
 mov si, 0xA
 
 ; jmp to the call far to start the infinity loop
 call far [bx]
 
 
-
 copy: ; this part of the code will be copy to the shared memory (for re writing)
 rep movsw
 sub word [bx], 0x200 ; the size of the next attack
 mov di, [bx]
-inc di
+mov cx, (end_of_copy - copy) / 2 - 2
+; write the opcode <call far [bx]> to the next attack location
+movsw
+
+dec di
 ; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
-mov cx, (end_of_copy - copy) / 2 + 1
 mov si, 0xA
-; write in the game the opcode 1fff
-mov bp, [bx]
-mov word [bp + 0x0], 0x1fff
 call far [bx]
+; for the movsw inside the copy
+call far [bx]
+
 
 ; final registers:
 ; bp - the location of the call far opcode (because it's special register)
