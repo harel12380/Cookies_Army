@@ -28,15 +28,11 @@ mov byte al, 0xA3 ; set the low byte of al to A3 (A5 - 2) so when the loop overw
 mov [0x2], ax
 mov word [0x4], 0x1000
 
-;mov bp, 2
-
 ; switch segments
 push es
 push ds
 pop es
 pop ds
-
-
 
 
 ; write to the start of the code (bx) - the location of the trap code location (for the zombies)
@@ -50,7 +46,6 @@ lea si, [bx + copy]
 ; copy all the copy code to the shared memory
 mov cx, (end_of_copy - copy) / 2
 rep movsw ; copy all the copy code to the shared memory
-
 
 
 ; switch segments
@@ -81,27 +76,34 @@ call far [bx]
 
 
 copy: ; this part of the code will be copy to the shared memory (for re writing)
-rep movsw
-sub word [bx], 0x200 ; the size of the next attack
-mov di, [bx]
-mov cx, (end_of_copy - copy) / 2 - 2
-; write the opcode <call far [bx]> to the next attack location
-movsw
-
-dec di
-; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
-mov si, 0xA
-call far [bx]
-; for the movsw inside the copy
-call far [bx]
+  rep movsw
+  sub word [bx], 0x200 ; the size of the next attack
+  mov di, [bx]
+  mov cx, (end_of_copy - copy) / 2 - 2
+  ; write the opcode <call far [bx]> to the next attack location
+  movsw
+  dec di
+  ; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
+  mov si, 0xA
+  call far [bx]
+  ; for the movsw inside the copy
+  call far [bx]
+end_of_copy:
 
 
 ; final registers:
 ; bp - the location of the call far opcode (because it's special register)
 ; bx - the location for the call far in shared memory - currently 0x2
 ; cx - the amount of times to do movsw
-; dx - free TODO: use it
-;
+; dx - TODO: the amount of space between each attack
+; ax - TODO: the amount of space between each call far
+; sp - free! TODO: use it
+; si - the location of the opcodes in the shared memory (should be 0 at each start of attack)
 
-end_of_copy:
+; shared memory locations:
+; 0 - sizeof(copy - end_of_copy) >> the opcodes for the instructions at the end of an attack
+; 0x100 - 0x103  >> the next location in the war zone to attack (used with the register <BX>) for the first warrier
+; 0x104 - 0x107  >> the next location in the war zone to attack (used with the register <BX>) for the second warrier
+; 
+
 trap: ; from here there is the code that the zombies will run
