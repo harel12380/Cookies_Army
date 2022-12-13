@@ -97,7 +97,6 @@ end_of_copy:
 ; cx - the amount of times to do movsw
 ; dx - TODO: the amount of space between each attack
 ; ax - TODO: the amount of space between each call far
-; sp - free! TODO: use it
 ; si - the location of the opcodes in the shared memory (should be 0 at each start of attack)
 
 ; shared memory locations:
