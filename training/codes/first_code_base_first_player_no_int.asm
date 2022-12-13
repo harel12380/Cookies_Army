@@ -1,4 +1,5 @@
 ; this code starts to attack in 37 moves
+; and complete the whole fight zone in 18452 moves
 
 ; share the ax with the shared memory (the other player)
 stosw
