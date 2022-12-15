@@ -1,1 +1,38 @@
 either attack a large area each time and run away little bit or attack a medium area and run away a lot
+user the direction flag (STD/CLD)
+
+if we attack at B3 then we shuold just really quickly attack the a3 at the same line
+
+Energy:
+use the virtual register Energy and call to the opcode WAIT*2 (but in run time this takes only 1 turn)
+the energy is get lower by 1 each 5 rounds
+the formula is: 1 + (int)(log(energy) / log(2))
+that means that if energy is odd, is not helping us (so energy(2) and energy(3) are the same)
+
+note: zombies how there name ends with 'h' are running at double speed
+
+general sizes:
+    /** Warrior's private stack size */
+    private final static short STACK_SIZE = 2*1024;
+    /** Group-shared private memory size */
+    private final static short GROUP_SHARED_MEMORY_SIZE = 1024;
+    /** Maximum number of warriors in a fight */
+    private final static int MAX_WARRIORS = 20;
+    /** Maximum attempts to load a warrior to the Arena */
+    private final static int MAX_LOADING_TRIES = 100;
+    /** Minimum initial space (in bytes) between loaded warriors */
+    private final static int MIN_GAP = 1024;
+warrior size:
+MAX_WARRIOR_SIZE = 512
+MAX_SIZE = 128
+the code:
+if (warriorSize > MAX_WARRIOR_SIZE) {
+    warriorSize = MAX_WARRIOR_SIZE;
+}
+
+so because of that, maybe its an idea to make the warrior bigger then 512, 
+and then the code will just cut the end of the code (but this is not important because the end of the code is not running enyway)
+
+Maybe save the int 0x86 (big bomb) to the safer warrior,
+and then he will check if he's been attack. If so, he will use the int 0x86 to defend himself
+
