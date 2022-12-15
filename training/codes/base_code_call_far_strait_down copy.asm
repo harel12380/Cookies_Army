@@ -1,5 +1,5 @@
 ; share the ax with the shared memory (the other player)
-stosw
+lodsw
 
 ; fill the ax & dx with cccc so that the second code can change it 
 mov ax, 0xcccc
@@ -21,8 +21,8 @@ mov bx, ax
 
 ; set the first location for the call far to be at bx with value of (ax - <value>)
 ;TODO: check if can change this to one row 
-sub ax, 0x200
-mov byte al, 0xA3 ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
+sub ah, 0x500
+mov byte al, 0xA1 ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
 
 ; write the first location to the shared memory
 mov [0x2], ax
@@ -60,39 +60,35 @@ pop ss
 
 ; put the location in the shared memory that will store the location of the call far opcode
 mov bx, 2
-mov sp, [bx]
-
-; if you need space:
-; inc sp
-; inc sp
-; if you need run time:
-add sp, 2
-
-;mov word [bp + 0x0], 0x1fff
+mov bp, [bx]
+mov word [bp + 0x0], 0xc401
+mov word [bp + 0x2], 0x1fff
 
 ; move the sp(stack pointer) to the location of the call far opcode + 200 (the amount of memory to attack before run away - can be changed) 
-;lea sp, [bp + 0x200]
+lea sp, [bp + 0x104] ;;;;;;;;;;;;;;;;;;;
 ; move di to the location of the call far opcode + 1
-;lea di, [bp + 1]
-;mov cl, (end_of_copy - copy) / 2 - 2
-mov si, (0xA + copy_opcode - copy)
-call near start_running
+mov di, bp
+inc di
+mov cl, (end_of_copy - copy) / 2
+mov si, 0xA
+mov dx, (end_of_copy - copy) - 3
+mov ax, 0x104
+; jmp to the call far to start the infinity loop
+call far [bx]
+
 
 copy: ; this part of the code will be copy to the shared memory (for re writing)
   rep movsw
-start_running:
-  sub word [bx], 0x200 ; the size of the next attack
-  mov di, [bx]
-  mov cx, (end_of_copy - copy) / 2 - 2
-  ; write the opcode <call far [bx]> to the next attack location
-  movsw
-  dec di
+  mov cx, (end_of_copy - copy) / 2
+  add word [bx], dx; the size of the next attack
+  add sp, dx
+  sub di, 5
   ; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
-  mov si, 0xA
-  call far [bx]
+  mov si, cx
   ; for the movsw inside the copy
-copy_opcode:
+  add sp, ax
   call far [bx]
+  
 end_of_copy:
 
 

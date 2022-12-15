@@ -1,0 +1,29 @@
+{
+  "p": [
+    {
+      "ptype": "p",
+      "title": "Player A",
+      "isEnabled": true,
+      "wtype": 0,
+      "code0": {
+        "asm": " PUSH DS\n POP ES\n MOV DI, AX\n MOV AX, 0xCCCC\n ADD WORD DI, 0x100\nagain:\n WAIT\n WAIT\n\n STOSW\n ADD WORD DI, 0xB\n JMP again\n ",
+        "addr_rand": true
+      }
+    },
+    {
+      "ptype": "p",
+      "title": "Player B",
+      "isEnabled": true,
+      "wtype": 0,
+      "code0": {
+        "asm": " PUSH DS\n POP ES\n MOV DI, AX\n MOV AX, 0xCCCC\n ADD WORD DI, 0x100\nagain:\n STOSW\n ADD WORD DI, 0xB\n JMP again\n ",
+        "addr_rand": true
+      }
+    }
+  ],
+  "sel": {
+    "label": "pA",
+    "idx": 0
+  },
+  "z_enabled": true
+}
