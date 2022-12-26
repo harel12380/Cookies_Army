@@ -1,6 +1,8 @@
 %define jmp_size 0x500
 %define gap 0x100
-%define bytes_to_skip_first_time_copy 0x4
+%define bytes_to_skip_first_time_copy 0x5
+%define si_loc 0xA0
+%define copy_loc 0x10
 
 ; jmp end_of_code ; if you want to check what is the size of the code
 
@@ -20,7 +22,7 @@ mov bx, ax
 lea si, [bx + copy]
 xor di, di
 ; copy all the copy code to the shared memory
-mov cx, (end_of_copy - copy) / 2
+mov cx, (end_of_copy - copy) / 2 + 1
 rep movsw ; copy all the copy code to the shared memory
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -37,15 +39,15 @@ pop ss
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |set di, si for the following <rep movsw> opcode|
-lea di, [bx + copy + 0x2]
-mov si, bytes_to_skip_first_time_copy ; 2 for skipping writing the <rep movsw> opcode
+lea di, [bx + copy + 0x1]
+mov si, 0x1 ; 2 for skipping writing the <rep movsw> opcode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |set the first attack location + the sp location|
 ; set the first location for the call far to be at bx with value of (ax - <value>)
 ;TODO: check if can change this to one row 
-mov byte al, 0xA3 ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
+mov byte al, 0xA1 ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
 mov bx, ax
 ; move the sp(stack pointer) to the location of the call far opcode + 200 (the amount of memory to attack before run away - can be changed) 
 ; NOTE: 0x400 = 1024 bytes which is the minimum distance between each players
@@ -66,27 +68,30 @@ mov word [bx + 0x2], 0x1000
 ; |setup last 'variables'|
 mov ax, jmp_size ; ax = jmp size
 mov dx, gap ; dx = attack size + jmp size
-mov bp, (end_of_copy - copy) / 2 - 2
-lea cx, [bp - 0x2] 
+mov bp, 0x8;(copy_second_part - copy - 3) / 2
+lea cx, [bp]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;xor si, si
 
 copy: ; this part of the code will be copy to the shared memory (for re writing)
+  movsw
   rep movsw
-  sub word [bx], ax ; the size of the next attack
+  sub byte [bx + 1], ah ; the size of the next attack
   sub sp, dx
   mov di, [bx]
   mov cx, bp
   ; write the opcode <call far [bx]> to the next attack location
   movsw
-  dec di
+  movsw
   ; reset the cl & si for the next copy (cl for the movsw loop; si for the location in the memory of the copy's code)
   xor si, si
+  dec di
   call far [bx]
   ; for the movsw inside the copy
   copy_second_part:
-  sub sp, ax
-  call far [bx]
+
+  sub sp, bx
+  call far [bx]  
 end_of_copy:
 
 
