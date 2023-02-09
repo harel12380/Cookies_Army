@@ -1,0 +1,3 @@
+nop
+mov bx, [0x1234]
+mov word [bx + 0x6], 0xcccc

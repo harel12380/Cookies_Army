@@ -102,8 +102,8 @@ end_of_copy:
 
 ; shared memory locations:
 ; 0 - sizeof(copy - end_of_copy) >> the opcodes for the instructions at the end of an attack
-; 0x100 - 0x103  >> the next location in the war zone to attack (used with the register <BX>) for the first warrier
-; 0x104 - 0x107  >> the next location in the war zone to attack (used with the register <BX>) for the second warrier
+; 0x100 - 0x103  >> the next location in the war zone to attack (used with the register <BX>) for the first warrior
+; 0x104 - 0x107  >> the next location in the war zone to attack (used with the register <BX>) for the second warrior
 ; 
 
 trap: ; from here there is the code that the zombies will run

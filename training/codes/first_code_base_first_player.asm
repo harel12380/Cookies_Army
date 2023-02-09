@@ -1,6 +1,7 @@
 ; share the ax with the shared memory (the other player)
 stosw
 
+; in the future this code will not be the second opcode (because of the jmp opcode)
 ; fill the ax & dx with cccc so that the second code can change it 
 mov ax, 0xcccc
 mov dx, 0xcccc

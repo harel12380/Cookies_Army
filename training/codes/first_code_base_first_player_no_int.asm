@@ -6,9 +6,8 @@ stosw
 mov bx, ax
 
 ; write to the start of the code (bx) - the location of the trap code location (for the zombies)
-lea dx, [bx + trap]
-mov [bx], dx  
-
+lea dx, [bx + trap] ; dx = bx + trap
+mov [bx], dx
 
 mov di, 0xA ; the location in the shared memory for the copy code location
 ; move si to the location of the code to copy
@@ -45,6 +44,8 @@ mov word [bp + 0x0], 0x1fff
 
 ; move the sp(stack pointer) to the location of the call far opcode + 200 (the amount of memory to attack before run away - can be changed) 
 lea sp, [bp + 0x200]
+mov dx, 0x700
+mov ax, 0x200
 ; move di to the location of the call far opcode + 1
 mov di, bp
 inc di
@@ -57,7 +58,8 @@ call far [bx]
 
 copy: ; this part of the code will be copy to the shared memory (for re writing)
   rep movsw
-  sub word [bx], 0x200 ; the size of the next attack
+  sub word [bx], ax ; the size of the next attack
+  sub sp, dx
   mov di, [bx]
   mov cx, (end_of_copy - copy) / 2 - 2
   ; write the opcode <call far [bx]> to the next attack location

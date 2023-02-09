@@ -1,0 +1,1 @@
+mov word [7777h], 8F8Bh
