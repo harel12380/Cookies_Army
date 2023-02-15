@@ -1,5 +1,5 @@
-; /// survivor 2 /// ;
-
+; /  survivor 2  /;
+; / unchangeable /;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; _X_Y = defines for us, shouldn't be used inside the code
@@ -20,7 +20,7 @@
 ; defines for the memory order
 ; sm - shared memory
 ; st - stack
-%define sm_call_far_location 0xA0
+%define sm_call_far_location 0xB0
 
 ; defines for the code
 
@@ -36,13 +36,12 @@
   %define movswOpcode 0xA5
   %define segmentSpace ((ORIGINAL_SEGMENT - attackSegment) * 0x10)
   %define finalAX (jmpSize + movswOpcode)
-  %define zombiesJmpSize 0x206
 
   ; sizes of parts inside the code
-  %define copyThirdPartSize (@end_of_copy - @copy_third_part_start) 
-  %define copyFirstPartSize (@copy_third_part - @copy_first_part_start)
+  ; %define copyThirdPartSize (@end_of_copy - @copy_third_part_start) 
+  %define copySecondPartSize (@end_of_copy - @copyS_second_part_start)
   %define copyToSharedMemorySize (@end_of_copy - @copy)
-  %define copyThirdPartSMOffset (@copy_third_part - @copy)
+  %define copyThirdPartSMOffset (@end_of_copy - @copy)
   %define copyFirstPartSMOffset (@copy_first_part_start - @copy)
 
 ; defines for the first survivor
@@ -57,14 +56,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |send the ax to the second survival|
-stosw
+;stosw
+;mov bx, ax
+mov di, 0x3FE
 mov bx, ax
-lea si, [bx + @copy_second_part] ; for ***
+lea si, [bx + @copy] ; for ***
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 jmp @start
 @start:
 
+stosw
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |write the location of <@trap>|
@@ -72,7 +74,7 @@ jmp @start
 ;write to the start of the code (bx) - the location of the @trap code location (for the zombies)
 ; ***
 add al, @trap
-mov [bx], dx
+mov [bx], ax
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -125,7 +127,7 @@ mov ax, finalAX
 mov dx, gapSize
 lea bp, [bx + 1]
 mov dx, 0xFC
-mov cl, GET_WORDS_AMOUNT(copyThirdPartSize)
+mov cl, [bx + 5]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 mov si, copyThirdPartSMOffset
@@ -135,24 +137,27 @@ movsw
 sub di, 3
 ;inc byte [bx]
 
+@copy:
+  ; S - second surviver
+  ; F - first surviver
+  @copyS:
 
-@copy: ; this part of the code will be copy to the shared memory (for re writing)
-  @copy_second_part:
+  @copyS_first_part:
   push ax
   call far [bx]
   push ax
 
-  @copy_first_part:
+  @copyS_second_part:
   movsw
   rep movsw
 
-  @copy_first_part_start:
+  @copyS_second_part_start:
   sub byte [bx + 1], ah ; the size of the next attack
 
   sub sp, dx
   mov di, [bx]
   dec di
-  mov cl, GET_WORDS_AMOUNT(copyFirstPartSize)
+  mov cl, GET_WORDS_AMOUNT(copySecondPartSize)
   xor si, si
   
   ; write the opcode <call far [bx]> to the next attack location
@@ -163,65 +168,25 @@ sub di, 3
   dec di
 
   call far [bx]
-  
-  @copy_third_part:
-  sub sp, dx
-  call far [bx]
-  rep movsw
-
-  @copy_third_part_start:
-  ; read zombies
-  ;
-  ;
-  ;
-  ;
-  mov cx, GET_WORDS_AMOUNT(zombiesJmpSize)
-  lea bp, [bp - MIN_DISTANCE - zombiesJmpSize]
-
-  @read_zombies:
-  mov ax, [bp]
-  cmp word ax, [bp + 0x2]
-  je @end_of_read_zombies ; if the current double word is 0xcccc
-  cmp ax, 0xcccc
-  jne @skipSwap
-  add bp, 2
-  mov ax, [bp]
-  @skipSwap:
-  cmp ah, 0xCC
-  je @skipLSBSwap
-  cmp ah, 0x0
-  je @skipLSBSwap
-  xchg al, ah
-  @skipLSBSwap:
-  xor ah, ah
-  mov dx, 0x206
-  mul dx
-  dec dx
-  jnz @skipOverflow
-  not ax
-  @skipOverflow:
-  sub bp, ax
-  mov word [bp - 0x206 + 0x38], 0xcccc
-  add bp, ax
-  @end_of_read_zombies:
-  add bp, 0x5
-  loop @read_zombies
-
-  ; perform copy_first_part
-  mov dx, gapSize
-  mov ax, finalAX
-  dec sp
-  dec sp
-  mov si, copyFirstPartSMOffset
-  mov cl, GET_WORDS_AMOUNT(copyFirstPartSize)
-  inc byte [bx]
-  inc byte [bx]
-  rep movsw
-
 @end_of_copy:
 
 @trap:
 
+@end_of_trap:
+; @trap:
+; push ds
+; pop ss
+; push cs
+; pop es
+
+; mov di, ax
+; add di, @end_of_trap
+; lea sp, [di + 8]
+; mov ax, 0x5052
+; mov dx, 0xFAEB
+; push ax
+; push ds
+; @end_of_trap:
 ; final registers - me
 ; 
 ; 
