@@ -8,6 +8,7 @@
 
 %define copyToStackSize (@copyStackEnd - @copyStackStart)
 %define SharedMemoryRepSize (@copyLoop - @copyFStart)
+%define copyFSize (@copyLoop - @copyFStart)
 
 ; general defines
 %define ORIGINAL_SEGMENT 0x1000
@@ -38,7 +39,6 @@ mov cl, GET_WORDS_AMOUNT(copyToStackSize)
 rep movsw ; copy all the copy code to the shared memory
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-add word [bx + @zombiesAreaLive], bx
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; | Switch Segments |
@@ -54,34 +54,10 @@ push cs
 pop ss
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-mov di, ax
-add bx, (@attackZombies + 0x50)
-mov word [0x3FE], bx ; write to second player, where to jmp to
-
-mov si, ((0x206 / 2) + secondCodeMaxSM)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; | attack zombies |
-@attackZombies:
-  mov cl, (0x206 / 2 / 4)
-  dw 0xC581 ; add bp, (0x0000 - secondCodeMaxSM)
-  @zombiesAreaLive:
-  dw 0x0
-
-  
-  @readZombies:
-
-    mov di, si
-    
-  loop @readZombies
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
+lea di, [bx + @copyStackStart + 1]
+mov si, 0x200
+mov cl, GET_WORDS_AMOUNT(copyFSize)
+mov bx, 0xB0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @copyStart:
 
@@ -112,26 +88,29 @@ mov si, ((0x206 / 2) + secondCodeMaxSM)
   @copyLoop:
   movsw
   movsw
-  xor si, si
-  
+
   ; check if I am under attack
   movsw
   movsw
-  mov di, [bx + 0x]
+  mov dx, [bx + 0x]
   movsw
   movsw
-  cmp di, [bx + 0x]
+  cmp dx, [bx + 0x]
   movsw
   movsw
-  jne @escape
-
+  je @dontEscape
+  movsw 
+  add si, (@escape - @dontEscape)
+  
+  @dontEscape:
   ; check if the second survivor is under attack
+  add si, 4
   movsw
   movsw
-  mov di, [bp - 0x]
+  mov dx, [bp - 0x]
   movsw
   movsw
-  cmp di, [bp + 0x]
+  cmp dx, [bp + 0x]
   je @attack ; if the second survivor is safe
   movsw
   movsw
@@ -150,11 +129,17 @@ mov si, ((0x206 / 2) + secondCodeMaxSM)
   push ax
   movsw
   movsw
+  movsw
+  movsw
+  movsw 
+  movsw
   mov si, 0x200
-  jmp @copyLoop
+  jmp short @copyLoop
+
 
   ; run away
   @escape:
+  
   movsw
   movsw
   int 0x86 ; try to attack the surviver who change [bx]
@@ -164,6 +149,7 @@ mov si, ((0x206 / 2) + secondCodeMaxSM)
   movsw
   add di, 0x8000
   stosw
+  sub di, 2
   jmp di ;- 2
 @copyStackEnd:
 

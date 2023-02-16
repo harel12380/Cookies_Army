@@ -26,7 +26,7 @@
 
 ; | Specific Sizes |
 ; for the attack
-%define gapSize (_jmp_size - _attack_size)
+%define gapSize (_jmp_size - _attack_size + 0x2)
 %define jmpSize (_jmp_size)
 %define jmpSizeMSB (jmpSize / 0x100)
 %define firstAttackAmount _first_attack_amount ; the amount of lines to attack in the first attack - MSB*2 for calculate the steps amount
@@ -154,8 +154,7 @@ sub di, 3
   movsw
   movsw
 
-  mov byte [bp + di + honeypotBeforePadding], 0x12
-  mov byte [bp + di + honeypotAfterPadding], 0x12
+  push cx
 
   dec di
   dec di
