@@ -1,20 +1,55 @@
+; / survivor 1 / ;
+; / changeable / ;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; |defines|
+%define firstAttackOffset 0x200
+%define firstATtackLowerByte 0x5A
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 push es
 pop ds
 
-lodsw
-mov bx, ax
+push cs
+push cs; push es
+push cs
+pop es
 
-push cs
-push cs
+lodsw
+mov al, firstATtackLowerByte ; the lower byte for the attack start
+xchg bp, ax
+
+mov ax, 0x
+mov dx, 0x
+int 0x87
+mov di, 0x
+int 0x86
+mov di, 0x
+int 0x86
+
 pop es
 pop ss
 
-lea di, [bx + @end]
-mov sp, di
+lea bp, [bp + firstAttackOffset] ; where the first attack
+mov sp, bp
+mov di, bp
 
-mov ax, 0x52AB
-mov dx, 0xABAB
+mov bp, 0xD4FF
+mov dx, 0x5355
 
+mov bx, 0xABAB
+mov cx, 0x5251
+
+mov ax, 0xABAB ; what I will write foward
+;mov di, 0x
+;mov si, 0x
+
+@attack:
+push bp
+push bx
+push cx
 push dx
-stosw
+call sp
+
 @end:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
