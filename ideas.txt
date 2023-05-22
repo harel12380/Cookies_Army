@@ -60,17 +60,6 @@ For Tuesday:
 * should we attack the zombies
 * what should be the attack size/gap/run away ('./attack_spaces_calc.txt')
 
-
-T-shirts:
-army of cookies dressed with military uniforms 
-* with green beret
-* holding the symbol of the Intelligence Corps
-
-To ask yuda:
-* are T-shirts relevant
-
-
-
 make a version of the code where we attack down instead of up
 and then test this version live and choose which version is better (down / up)
 Note: instead of writing each time a new version of the code just write the changes that need to be done in order to switch
