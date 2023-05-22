@@ -96,19 +96,4 @@ copy_opcode:
   call far [bx]
 end_of_copy:
 
-
-; final registers:
-; bp - the location of the call far opcode (because it's special register)
-; bx - the location for the call far in shared memory - currently 0x2
-; cx - the amount of times to do movsw
-; dx - TODO: the amount of space between each attack
-; ax - TODO: the amount of space between each call far
-; si - the location of the opcodes in the shared memory (should be 0 at each start of attack)
-
-; shared memory locations:
-; 0 - sizeof(copy - end_of_copy) >> the opcodes for the instructions at the end of an attack
-; 0x100 - 0x103  >> the next location in the war zone to attack (used with the register <BX>) for the first warrier
-; 0x104 - 0x107  >> the next location in the war zone to attack (used with the register <BX>) for the second warrier
-; 
-
 trap: ; from here there is the code that the zombies will run
