@@ -1,203 +1,157 @@
 ; / survivor 1 / ;
 ; / changeable / ;
 
-; TODO delete this defines:
-; defines for us
-%define _jmp_size 0x4200
-%define _attack_size 0x1000
-%define _first_attack_amount 0x4000
-%define gapSize (_jmp_size - _attack_size)
-%define jmpSize (_jmp_size)
-%define jmpSizeMSB (jmpSize / 0x100)
-%define finalAX (jmpSize + movswOpcode)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |defines|
 
-; spacial bits
-%define zombiesSearchJmpSize 0x5
-%define movswOpcode 0xA5
-%define zombiesJmpSize 0x206
+%define secondCodeMaxSM 0x28
 
-; defines for the memory order
-; sm - shared memory
-; st - stack
-%define sm_call_far_location 0xB0
-; sizes of parts inside the code
-%define secondCodeCopyBytesSize 0x1A ; change this to the last byte that the second code will change
-%define copyStartSize (@copyLoop - @copy)
-%define copyThirdPartSize (@copy_third_part_end - @copy_third_part_start)
-%define copyToSharedMemorySize  (@end_of_copy - @copy)
-%define copyToStackSize (@endOfCopyStack - @copyStack)
-%define copyFSize (@endOfCopyStack - @copyFStart)
+%define copyToStackSize (@copyStackEnd - @copyStackStart)
+%define SharedMemoryRepSize (@copyLoop - @copyFStart)
+%define copyFSize (@copyLoop - @copyFStart)
 
 ; general defines
 %define ORIGINAL_SEGMENT 0x1000
 %define MIN_DISTANCE 0x400
 %define GET_WORDS_AMOUNT(BYTES_AMOUNT) ((BYTES_AMOUNT / 2) + (BYTES_AMOUNT % 2))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |get the ax of the second surviver|
-; TODO add more opcodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; | the early code that will run before the start (not multiple 5 times)|
+; | maximum 3 opcodes|
+@eralyCodeStart:
 mov bx, ax
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+lodsw
+@eralyCodeEnd:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 jmp @start
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @start:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |copy the <copy> to the shared memory|
-mov di, secondCodeCopyBytesSize
-; move si to the location of the code to copy
-lea si, [bx + @copy]
-; copy all the copy code to the shared memory
-mov cl, GET_WORDS_AMOUNT(copyToSharedMemorySize)
-rep movsw ; copy all the copy code to the shared memory
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |copy the <copyStack> to the stack|
-push ss
-pop es
-
-mov di, 0
+mov di, 0x200
 ; move si to the location of the code to copy
-lea si, [bx + @copyStack]
+lea si, [bx + @copyStackStart]
 ; copy all the copy code to the shared memory
 mov cl, GET_WORDS_AMOUNT(copyToStackSize)
 rep movsw ; copy all the copy code to the shared memory
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; | Switch Segments |
+; CS - 1000
+; DS - SS
+; SS - 1000
+; ES - 1000
 push es
 pop ds
-mov si, 0x3FC
-lodsw
 push cs
 pop es
-
-push ss
-pop ds
-; the bp will point to the board
 push cs
 pop ss
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; mov byte [0xB5], GET_WORDS_AMOUNT(copyThirdPartSize)
-mov bx, sm_call_far_location
+lea di, [bx + @copyStackStart + 1]
+mov si, 0x200
+mov cl, GET_WORDS_AMOUNT(copyFSize)
+mov bx, 0xB0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@copyStart:
 
-mov di, ax
-add di, 0x200
+@copyEnd:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-mov si, 0
 
-mov bp, di
-mov byte [bp], 0xA5
-inc di
-jmp si
-
-@copy:
-  @copyS_third_part:
-  sub sp, dx
-  call far [bx]
-  rep movsw
-
-  @copy_third_part_start:
-  ; read zombies
-  ;
-  ;
-  ;
-  ;
-  mov cx, zombiesJmpSize / zombiesSearchJmpSize
-  lea bp, [bp - MIN_DISTANCE - zombiesJmpSize]
-
-  @copy_read_zombies:
-  mov ax, [bp]
-  cmp word ax, [bp + 0x2]
-  je @end_of_read_zombies ; if the current double word is 0xcccc
-  cmp ax, 0xcccc
-  jne @skipSwap
-  add bp, 2
-  mov ax, [bp]
-  @skipSwap:
-  cmp ah, 0xCC
-  je @skipLSBSwap
-  cmp ah, 0x0
-  je @skipLSBSwap
-  xchg al, ah
-  @skipLSBSwap:
-  xor ah, ah
-  mov dx, 0x206
-  mul dx
-  dec dx
-  jnz @skipOverflow
-  not ax
-  @skipOverflow:
-  sub bp, ax
-  mov di, [bp - 0x206 + 0x40]
-  int 0x86
-  mov word [bp - 0x206 + 0x38], 0xFF26
-  add bp, ax
-  @end_of_read_zombies:
-  add bp, zombiesSearchJmpSize
-  loop @copy_read_zombies
-
-  ; perform copy_first_part
-  mov dx, gapSize
-  mov ax, finalAX
-  dec sp
-  dec sp
-  mov si, 1
-  mov cl, GET_WORDS_AMOUNT(1)
-  inc byte [bx]
-  inc byte [bx]
-  rep movsw
-
-  @copy_third_part_end:
-@end_of_copy:
-
-@copyStack:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@copyStackStart:
   movsw
   rep movsw
 
   @copyFStart:
-  mov cl, GET_WORDS_AMOUNT(copyFSize)
+  
+  mov cl, 0x30
+  @getEnergy:
+  wait
+  wait
+  loop @getEnergy
+
+  ; setup the next attack
+  mov cl, GET_WORDS_AMOUNT(SharedMemoryRepSize)
   mov ax, 0x50A5
   mov bp, [bx] ; get the location of the first
 
+
+  
   @copyLoop:
-  xor si, si
-  
+  movsw
+  movsw
+
   ; check if I am under attack
+  movsw
+  movsw
+  mov dx, [bx + 0x]
+  movsw
+  movsw
+  cmp dx, [bx + 0x]
+  movsw
+  movsw
+  je @dontEscape
+  movsw 
+  add si, (@escape - @dontEscape)
   
-  mov dx, [di + 0x]
-  cmp dx, [di + 0x]
-  jne @escape
-  
+  @dontEscape:
   ; check if the second survivor is under attack
-  
+  add si, 4
+  movsw
+  movsw
   mov dx, [bp - 0x]
+  movsw
+  movsw
   cmp dx, [bp + 0x]
   je @attack ; if the second survivor is safe
-  
+  movsw
+  movsw
   ; protect the second survivor
   mov byte [bp], 0x5A
-
+  movsw
+  movsw
   ; attack
   @attack:
   push ax
+  movsw
+  movsw
   sub sp, 0xA ; attack with spaces
+  movsw
+  movsw
   push ax
+  movsw
+  movsw
+  movsw
+  movsw
+  movsw 
+  movsw
+  mov si, 0x200
+  jmp short @copyLoop
 
-  jmp @copyLoop
 
   ; run away
   @escape:
+  
+  movsw
+  movsw
+  int 0x86 ; try to attack the surviver who change [bx]
+  movsw
+  movsw
+  movsw
+  movsw
   add di, 0x8000
   stosw
+  sub di, 2
   jmp di ;- 2
-@endOfCopyStack:
+@copyStackEnd:
 
-
-@trap:
+@end:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

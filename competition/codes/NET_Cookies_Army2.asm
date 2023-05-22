@@ -1,88 +1,75 @@
-; /  survivor 2  /;
-; / unchangeable /;
+; /  survivor 2  / ;
+; / unchangeable / ;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; _X_Y = defines for us, shouldn't be used inside the code
-; xY = defines for the code
-; x_y = defines for memory order
-; X_Y = general defines
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; |                                  defines                                  |
 
+; | Controlled Defines |
+%define _jmp_size 0x4200 ; how far away to run after attack
+%define _attack_size 0x1000 ; how much space to attack
+%define _first_attack_amount 0x8000 ; the upper attack amount
+%define _honeypot_padding 0x50
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |defines|
-
-; defines for us
-%define _jmp_size 0x4200
-%define _attack_size 0x1000
-%define _first_attack_amount 0x4000
-
-; defines for the memory order
+; | Spacial Memory Locations |
 ; sm - shared memory
 ; st - stack
 %define sm_call_far_location 0xB0
 
-; defines for the code
 
-  ; calculate sizes of the attacks
-  %define gapSize (_jmp_size - _attack_size)
-  %define jmpSize (_jmp_size)
-  %define jmpSizeMSB (jmpSize / 0x100)
-  %define firstAttackAmount _first_attack_amount ; the amount of lines to attack in the first attack - MSB*2 for calculate the steps amount
+; | Spacial Bytes |
+%define attackLowerByteLocation 0xA7
+%define attackSegment 0x0FFB ; the original segment is 0x1000
+%define movswOpcode 0xA5
+%define segmentSpace ((ORIGINAL_SEGMENT - attackSegment) * 0x10)
+%define finalAX (jmpSize + movswOpcode)
 
-  ; spacial bits
-  %define attackLowerByteLocation 0xA7
-  %define attackSegment 0x0FFB ; the original segment is 0x1000
-  %define movswOpcode 0xA5
-  %define segmentSpace ((ORIGINAL_SEGMENT - attackSegment) * 0x10)
-  %define finalAX (jmpSize + movswOpcode)
 
-  ; sizes of parts inside the code
-  ; %define copyThirdPartSize (@end_of_copy - @copy_third_part_start) 
-  %define copySecondPartSize (@end_of_copy - @copyS_second_part_start)
-  %define copyToSharedMemorySize (@end_of_copy - @copy)
-  %define copyThirdPartSMOffset (@end_of_copy - @copy)
-  %define copyFirstPartSMOffset (@copy_first_part_start - @copy)
+; | Specific Sizes |
+; for the attack
+%define gapSize (_jmp_size - _attack_size)
+%define jmpSize (_jmp_size)
+%define jmpSizeMSB (jmpSize / 0x100)
+%define firstAttackAmount _first_attack_amount ; the amount of lines to attack in the first attack - MSB*2 for calculate the steps amount
+%define honeypotBeforePadding (-_honeypot_padding-_honeypot_padding)
+%define honeypotAfterPadding (_honeypot_padding)
 
-; defines for the first survivor
-%define locFirstSpacialPush @copy_second_part
-%define locSecondSpacialPush @copy_second_part + 0x3
 
-; general defines
+; sizes of parts inside the code
+%define copyToSharedMemorySize (@copyEnd - @copyStart)
+%define copySecondPartSize (@copyThirdPart - @copySecondPartStart)
+%define copyThirdPartSize (@copyEnd - @copyThirdPartStart)
+; | Specific Locations |
+%define copySecondPartSMOffset (@copySecondPart - @copyStart)
+%define copyThirdPartSMOffset (@copyThirdPart - @copyStart)
+
+; | Consts |
 %define ORIGINAL_SEGMENT 0x1000
 %define MIN_DISTANCE 0x400
+; | Macros |
 %define GET_WORDS_AMOUNT(BYTES_AMOUNT) ((BYTES_AMOUNT / 2) + (BYTES_AMOUNT % 2))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |send the ax to the second survival|
-;stosw
-;mov bx, ax
-mov di, 0x3FE
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; | the early code that will run before the start (not multiple 5 times)|
+; | maximum 3 opcodes|
+@eralyCodeStart:
+stosw
 mov bx, ax
-lea si, [bx + @copy] ; for ***
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+lea si, [bx + @copyStart] ; for ***
+@eralyCodeEnd:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 jmp @start
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @start:
 
-stosw
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |write the location of <@trap>|
-; only if attack zombies:
-;write to the start of the code (bx) - the location of the @trap code location (for the zombies)
-; ***
-add al, @trap
-mov [bx], ax
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |copy the <copy> to the shared memory|
-; move si to the location of the code to copy
+; | copy the <copy> to the shared memory |
+; *** - move si to the location of the code to copy
+; reset di
 xor di, di
-; copy all the copy code to the shared memory
+
 mov cl, GET_WORDS_AMOUNT(copyToSharedMemorySize)
 rep movsw ; copy all the copy code to the shared memory
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -99,6 +86,11 @@ pop es
 pop ss
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+xchg bx, sp
+mov ax, 0x1FFF
+mov dx, 0xCCCC
+int 0x87
+xchg bx, sp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |set the first attack location + the sp location|
@@ -124,34 +116,32 @@ mov word [bx + 0x2], attackSegment
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |setup last 'variables'|
 mov ax, finalAX
-mov dx, gapSize
-lea bp, [bx + 1]
+; mov dx, gapSize
 mov dx, 0xFC
-mov cl, [bx + 5]
+; mov cl, 2; [bx + 5]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+mov cl, GET_WORDS_AMOUNT(copyThirdPartSize)
 
 mov si, copyThirdPartSMOffset
 les di, [bx] ; set di & es
 movsw
 movsw
 sub di, 3
-;inc byte [bx]
 
-@copy:
-  ; S - second surviver
-  ; F - first surviver
-  @copyS:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@copyStart:
 
-  @copyS_first_part:
+@copyFirstPart:
   push ax
   call far [bx]
   push ax
 
-  @copyS_second_part:
-  movsw
-  rep movsw
+@copySecondPart:
+  movsw ; write the <rep movsw> (the next line of code)
+  rep movsw ; write all the @copySecondPartStart
 
-  @copyS_second_part_start:
+@copySecondPartStart:
   sub byte [bx + 1], ah ; the size of the next attack
 
   sub sp, dx
@@ -163,41 +153,31 @@ sub di, 3
   ; write the opcode <call far [bx]> to the next attack location
   movsw
   movsw
-  
+
+  mov byte [bp + di + honeypotBeforePadding], 0x12
+  mov byte [bp + di + honeypotAfterPadding], 0x12
+
   dec di
   dec di
 
   call far [bx]
-@end_of_copy:
 
-@trap:
+@copyThirdPart:
+  sub sp, dx
+  call far [bx]
+  rep movsw
+  
+  @copyThirdPartStart:
 
-@end_of_trap:
-; @trap:
-; push ds
-; pop ss
-; push cs
-; pop es
+  mov dx, gapSize
+  mov cl, GET_WORDS_AMOUNT(copySecondPartSize)
+  add byte [bx], 0x2
+  sub sp, 0x2
+  mov si, copySecondPartSMOffset
+  rep movsw
 
-; mov di, ax
-; add di, @end_of_trap
-; lea sp, [di + 8]
-; mov ax, 0x5052
-; mov dx, 0xFAEB
-; push ax
-; push ds
-; @end_of_trap:
-; final registers - me
-; 
-; 
-; 
-; 
-; 
-; 
-; final registers - zombies
-;
-;
-;
-;
-;
-;
+@copyEnd:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+@end:
