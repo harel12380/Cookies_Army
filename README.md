@@ -1,15 +1,18 @@
 # Cookies_Army
 
-Welcome to the Cookies_Army repository! 
-This repository contains all the code and external data used by our team, consisting of Ahiya Cohen, Amit Sabri, and myself, during Codeguru Xtreme 18 competition. 
+Welcome to the Cookies_Army repository!
+This repository contains all the code and external data used by our team, consisting of Ahiya Cohen, Amit Sabri, and myself, during Codeguru Xtreme 18 competition.
 The competition focused on assembly programming, and here you will find our final codes and other relevant resources.
 
 ## Table of Contents
-- [Team Members](#team-members)
-- [Competition Details](#competition-details)
-- [Repository Structure](#repository-structure)
-- [Usage](#usage)
-- [License](#license)
+
+- [Cookies_Army](#cookies_army)
+  - [Table of Contents](#table-of-contents)
+  - [Team Members](#team-members)
+  - [Competition Details](#competition-details)
+  - [Repository Structure](#repository-structure)
+  - [Usage](#usage)
+  - [License](#license)
 
 ## Team Members
 
@@ -19,8 +22,8 @@ The competition focused on assembly programming, and here you will find our fina
 
 ## Competition Details
 
-Codeguru Xtreme 18 was an exciting assembly programming competition that pushed us to our limits. 
-The competition challenged participants to showcase their skills in low-level programming and problem-solving. 
+Codeguru Xtreme 18 was an exciting assembly programming competition that pushed us to our limits.
+The competition challenged participants to showcase their skills in low-level programming and problem-solving.
 We put our heads together, shared our knowledge, and worked diligently as a team to tackle the challenges presented to us.
 
 The competition website can be found [here](https://codeguru.co.il/Xtreme/). (Please note that the website is in Hebrew.)
@@ -41,7 +44,6 @@ Cookies_Army/
 - The `competition` directory holds all the code and resources related to the Codeguru Xtreme 18 competition.
 
   - The `codes` directory contains additional code snippets, examples, and utility functions that were used during the competition.
-
   - The `phase1`, `phase2`, and `phase3` directories represent the different phases of the competition.
 
     - Each `phase` directory contains the codes developed for that specific phase.
@@ -68,7 +70,7 @@ Feel free to adapt and modify the code according to your requirements. However, 
 
 ## License
 
-The content of this repository is licensed under the [MIT License](LICENSE). 
+The content of this repository is licensed under the [MIT License](LICENSE).
 You are free to use, modify, and distribute the code and data files as permitted by the license.
 
 Please note that while we strive to provide reliable and accurate code, we do not take any responsibility for how you use it or any consequences thereof. Use the code at your own risk.

@@ -14,28 +14,6 @@ that means that if energy is odd, is not helping us (so energy(2) and energy(3) 
 
 note: zombies who their name ends with 'h' are running at double speed
 
-general sizes:
-    /** Warrior's private stack size */
-    private final static short STACK_SIZE = 2*1024;
-    /** Group-shared private memory size */
-    private final static short GROUP_SHARED_MEMORY_SIZE = 1024;
-    /** Maximum number of warriors in a fight */
-    private final static int MAX_WARRIORS = 20;
-    /** Maximum attempts to load a warrior to the Arena */
-    private final static int MAX_LOADING_TRIES = 100;
-    /** Minimum initial space (in bytes) between loaded warriors */
-    private final static int MIN_GAP = 1024;
-warrior size:
-MAX_WARRIOR_SIZE = 512
-MAX_SIZE = 128
-the code:
-if (warriorSize > MAX_WARRIOR_SIZE) {
-    warriorSize = MAX_WARRIOR_SIZE;
-}
-
-so because of that, maybe its an idea to make the warrior bigger then 512, 
-and then the code will just cut the end of the code (but this is not important because the end of the code is not running anyway)
-
 Maybe save the int 0x86 (big bomb) to the safer warrior,
 and then he will check if he's been attack. If so, he will use the int 0x86 to defend himself
 
@@ -50,17 +28,7 @@ put inside the copy more movsw so that the rep movsw's content wont be overwritt
 
 change once in a while the lower byte (from 0x50 distance to 0x40|0x10) so that we wont stay in a specific LSB for too long
 
-
-For Tuesday:
-* attack down or up
-* put gap between the attack areas
-* divide the warriors to attacker and defender
-* use WAIT opcode
-* when to use 0x86/0x87 - only on top 10
-* should we attack the zombies
-* what should be the attack size/gap/run away ('./attack_spaces_calc.txt')
-
-make a version of the code where we attack down instead of up
+make a version of the code where we attack up instead of down
 and then test this version live and choose which version is better (down / up)
 Note: instead of writing each time a new version of the code just write the changes that need to be done in order to switch
 
