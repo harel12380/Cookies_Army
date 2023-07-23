@@ -4,6 +4,8 @@ Welcome to the Cookies_Army repository!
 This repository contains all the code and external data used by our team, consisting of Ahiya Cohen, Amit Sabri, and myself, during Codeguru Xtreme 18 competition.
 The competition focused on assembly programming, and here you will find our final codes and other relevant resources.
 
+https://github.com/harel12380/Cookies_Army/assets/76132094/473bf016-4724-4a72-ba4a-459658fe535e
+
 ## Table of Contents
 
 - [Cookies_Army](#cookies_army)
