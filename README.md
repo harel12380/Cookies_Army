@@ -46,11 +46,13 @@ Cookies_Army/
 ```
 
 - The `competition` directory holds all the code and resources related to the Codeguru Xtreme 18 competition.
-
   - The `codes` directory contains additional code snippets, examples, and utility functions that were used during the competition.
   - The `phase1`, `phase2`, and `phase3` directories represent the different phases of the competition.
-
     - Each `phase` directory contains the codes developed for that specific phase.
+
+Note that the Cookies_Army/competition/NET_Cookies_Army[1-2].asm is the final code assembled and sent.
+
+And the Cookies_Army/competition/NET_Cookies_Army[1-2] is the assembled code.
 
 ## Usage
 

@@ -1,5 +1,27 @@
-; /  survivor 2  / ;
-; / unchangeable / ;
+; /  survivor 1  / ;
+; / changeable / ;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; |                                  notes                                     |
+
+; 1. The code in this file is adapted to the Codeguru Xtreme 18 competition.
+
+; 2. All nop codes in this code are part of Codeguru Xtreme 18 rules.
+;    Which states that for any N bytes, the 'nop' opcode should appear.
+;    Where N is different for each state in the competition.
+
+; 3. Not all settings are used in the code itself.
+;    That is because this code is built to be dynamic,
+;    and therefore needs to adapt to different types of gameplay
+
+; 4. At the beginning and the end of the code there is a comment like this:
+;    `CODE * 2 + protection` - in thoes areas goes our decoys & protection
+;    this is neccessary for blocking any `int 0x87` attacks.
+;    We used the byte 0xCC six times together with copies of the code in order
+;    to protect our code.
+;    Please note that there are other ways of protecting the code from `int 0x87`
+;    and this is just how we decided to implement the protection.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; |                                  defines                                  |
@@ -17,7 +39,7 @@
 
 ; | Spacial Bytes |
 %define attackLowerByteLocation 0xA2
-%define attackSegment 0x0FFB ; the original segment is 0x1000
+%define attackSegment 0x0FFB ; note: the original segment is 0x1000
 %define movswOpcode 0xA5
 %define segmentSpace ((ORIGINAL_SEGMENT - attackSegment) * 0x10)
 %define finalAX (jmpSize + movswOpcode)
@@ -29,8 +51,7 @@
 %define jmpSize (_jmp_size)
 %define jmpSizeMSB (jmpSize / 0x100)
 %define firstAttackAmount _first_attack_amount ; the amount of lines to attack in the first attack - MSB*2 for calculate the steps amount
-%define honeypotBeforePadding (-_honeypot_padding-_honeypot_padding)
-%define honeypotAfterPadding (_honeypot_padding)
+%define firstAttackSpace (0x7000 - 1 + MIN_DISTANCE)
 
 
 ; sizes of parts inside the code
@@ -50,9 +71,8 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; | the early code that will run before the start (not multiple 5 times)|
-; | maximum 3 opcodes|
-; ax
+; | the early code that will run before the start (do not multiply 5 times) |
+; | maximum 3 opcodes |
 @eralyCodeStart:
 nop
 push es
@@ -60,46 +80,51 @@ pop ds
 @eralyCodeEnd:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; CODE * 2
-
 jmp @start
+
+; CODE * 2 + protection - see notes for more information
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @start:
 
+; get the ax of the second survivor
 lodsw
 mov bx, ax
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |switch segments|
-; es, ss = 0x1000 (board)
+; | switch segments |
+; set es & ss to 0x1000 (the board)
 push cs
 push cs
 pop es
 pop ss
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; | specific attack |
+; attack using smart bomb
 xchg bx, sp
 mov ax, 0x170E
 mov dx, 0xFFB8
 int 0x87
 xchg bx, sp
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |set the first attack location + the sp location|
-; set the first location for the call far to be at bx with value of (ax - <value>)
-mov byte bl, attackLowerByteLocation ; set the low byte of al to A3 (A5 - 2) so when the loop overwrite itself it will be in the location of A5 (movsb opcode) 
-; move the sp(stack pointer) to the location of the call far opcode + 200 (the amount of memory to attack before run away - can be changed) 
-; NOTE: 0x400 = 1024 bytes which is the minimum distance between each players
-lea sp, [bx - 0x1000 - 1 + MIN_DISTANCE + 6 + firstAttackAmount + 0x8000]
-lea ax, [bx - 0x1000 - 1 + MIN_DISTANCE + MIN_DISTANCE - 0x100 + 0x8000]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |setup the location of the call far opcode inside the shared memory|
+; | set the first attack location + the sp location |
+; set the low byte of al to <attackLowerByteLocation> so when the loop overwrite itself it will be in the location of the a writing (MOVSW, MOVSB, etc.) opcode
+mov byte bl, attackLowerByteLocation
+; move the sp(stack pointer) to the location of the call far opcode
+lea sp, [bx + firstAttackSpace + 6 + firstAttackAmount]
+lea ax, [bx + firstAttackSpace + MIN_DISTANCE - 0x100]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; | setup the loop's locations inside the shared memory |
 mov bx, sm_call_far_location + 4
 
-; write the first location to the shared memory
 mov word [bx], ax
 mov word [bx + 0x2], ORIGINAL_SEGMENT
 
@@ -107,30 +132,33 @@ mov word [bx - 2], attackSegment
 nop
 add ax, 7
 
-
 mov [bx - 4], ax
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; |setup last 'variables'|
+; | setup last variables |
 mov ax, finalAX
 mov dx, 0xFC
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 mov cl, 0x7
-
 mov si, 0x1B
 mov di, [bx]
-;les di, [bx] ; set di & es
 dec di
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; write the attacking bytes of the first attack to the board
 movsw
 movsw
 movsw
 sub di, 4
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; start the upwards loop
 push cx
 call far [bx]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 @end:
+
+; CODE * 2 + protection - see notes for more information
