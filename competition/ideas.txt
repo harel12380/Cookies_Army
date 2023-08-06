@@ -1,36 +1,36 @@
-either attack a large area each time and run away little bit or attack a medium area and run away a lot
+either attack a large area each time and run away a little bit or attack a medium area and run away a lot
 user the direction flag (STD/CLD)
 
 if we attack at B3 then we should just really quickly attack the a3 at the same line
 
-attack with the opcode movsb and not movsw, but be ready to be overwrite with the opcode movsw
+attack with the opcode movsb and not movsw, but be ready to be overwritten with the opcode movsw
 so when we attack - we will override others with movsb (and they will be ready for movsw and not movsw)
 but when others attack us, we will be ready for both movsw and movsb
 Energy:
 use the virtual register Energy and call to the opcode WAIT*2 (but in run time this takes only 1 turn)
-the energy is get lower by 1 each 5 rounds
+the energy is getting lower by 1 in each 5 rounds
 the formula is: 1 + (int)(log(energy) / log(2))
 that means that if energy is odd, is not helping us (so energy(2) and energy(3) are the same)
 
-note: zombies who their name ends with 'h' are running at double speed
+note: zombies whose name ends with 'h' are running at double speed
 
 Maybe save the int 0x86 (big bomb) to the safer warrior,
-and then he will check if he's been attack. If so, he will use the int 0x86 to defend himself
+and then he will check if he's been attacked. If so, he will use the int 0x86 to defend himself
 
 
-put the attack size in the shared memory, what will allowed the warriors to change the attack size of each other
+put the attack size in the shared memory, what will allow the warriors to change the attack size of each other
 
 write a specific bit before and after the call far (so that nobody would be able to do int 0x87 to us)
 and change this bit with the second player
 
-put inside the copy more movsw so that the rep movsw's content wont be overwritten later
+put inside the copy more movsw so that the rep movsw's content won't be overwritten later
 
 
-change once in a while the lower byte (from 0x50 distance to 0x40|0x10) so that we wont stay in a specific LSB for too long
+change once in a while the lower byte (from 0x50 distance to 0x40|0x10) so that we won't stay in a specific LSB for too long
 
 make a version of the code where we attack up instead of down
 and then test this version live and choose which version is better (down / up)
 Note: instead of writing each time a new version of the code just write the changes that need to be done in order to switch
 
 
-put some code in the end of the stack/shared memory and than when the code is over it will skip to the start of the code
+put some code in the end of the stack/shared memory and then when the code is over it will skip to the start of the code

@@ -1,8 +1,8 @@
-; this code is a list of calculations for testing what is the best 'variables' to put
+; this code is a list of calculations for testing what are the best 'variables' to put
 
 ; definitions:
 ; 'attack' = direct attack in a certain place (until you run use 0xA5 to move/run away to another location)
-; 'attack size' = the amount of data that been attacked in an <attack>
+; 'attack size' = the amount of data that has been attacked in an <attack>
 ; 'fight zone' = the whole place to attack (0x100 * 0x100 = 0x10_000)
 ; 'jmp distance' = what is the size of the jmp opcode
 ; 'blank' ('gap') = how much space do you leave blank (<jmp distance> - the sub that has been done to sp)
